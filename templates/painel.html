@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Painel de Pedidos</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header>📦 Painel de Pedidos - Na Chapa Hall</header>
+<div class="container">
+<table border="1" style="width:95%;margin:auto;color:white;text-align:center;border-collapse:collapse;">
+<tr><th>ID</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th>Ações</th></tr>
+{% for p in pedidos %}
+<tr>
+<td>{{ p.id }}</td>
+<td>{{ p.cpf }}</td>
+<td>{{ p.itens }}</td>
+<td>{{ p.total }}</td>
+<td>{{ p.status }}</td>
+<td>
+<form method="post" action="/alterar_status/{{ p.id }}">
+<select name="status">
+<option {{'selected' if p.status=='Recebido' else ''}}>Recebido</option>
+<option {{'selected' if p.status=='Em preparo' else ''}}>Em preparo</option>
+<option {{'selected' if p.status=='Pronto' else ''}}>Pronto</option>
+<option {{'selected' if p.status=='Saiu para entrega' else ''}}>Saiu para entrega</option>
+<option {{'selected' if p.status=='Entregue' else ''}}>Entregue</option>
+</select>
+<button type="submit">Salvar</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+</body>
+</html>
