@@ -60,28 +60,55 @@ def open_browser():
         webbrowser.open('http://127.0.0.1:5000')
     except:
         pass
+from flask import Flask, render_template, request, redirect
+import os
+
+app = Flask(__name__)
+
+# Caminhos dos arquivos TXT
+CLIENTES_TXT = "clientes.txt"
+PEDIDOS_TXT = "pedidos.txt"
+
+def ler_pedidos():
+    pedidos = []
+    if os.path.exists(PEDIDOS_TXT):
+        with open(PEDIDOS_TXT, "r", encoding="utf-8") as f:
+            for linha in f:
+                partes = linha.strip().split("|")
+                if len(partes) == 5:
+                    pedidos.append({
+                        "nome": partes[0],
+                        "cpf": partes[1],
+                        "itens": partes[2],
+                        "total": partes[3],
+                        "status": partes[4]
+                    })
+    return pedidos
+
+def salvar_pedidos(pedidos):
+    with open(PEDIDOS_TXT, "w", encoding="utf-8") as f:
+        for p in pedidos:
+            f.write(f"{p['nome']}|{p['cpf']}|{p['itens']}|{p['total']}|{p['status']}\n")
+
+@app.route("/painel")
+def painel():
+    pedidos = ler_pedidos()
+    return render_template("painel.html", pedidos=pedidos)
+
+@app.route("/atualizar_status", methods=["POST"])
+def atualizar_status():
+    cpf = request.form["cpf"]
+    novo_status = request.form["status"]
+
+    pedidos = ler_pedidos()
+    for p in pedidos:
+        if p["cpf"] == cpf:
+            p["status"] = novo_status
+            break
+
+    salvar_pedidos(pedidos)
+    return redirect("/painel")
 
 if __name__ == '__main__':
     threading.Timer(1.0, open_browser).start()
     app.run(host='0.0.0.0', port=5000, debug=True)
-@app.route('/painel')
-def painel():
-    pedidos = []
-    for i, line in enumerate(db._read_lines(db.PEDIDOS_FILE), start=1):
-        parts = line.split('|')
-        if len(parts) >= 5:
-            pedidos.append({
-                'id': i,
-                'cpf': parts[0],
-                'data_hora': parts[1],
-                'itens': parts[2],
-                'total': parts[3],
-                'status': parts[4]
-            })
-    return render_template('painel.html', pedidos=pedidos)
-
-@app.route('/alterar_status/<int:pid>', methods=['POST'])
-def alterar_status(pid):
-    novo_status = request.form.get('status')
-    ok = db.atualizar_status(pid, novo_status)
-    return redirect(url_for('painel'))
