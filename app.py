@@ -64,3 +64,24 @@ def open_browser():
 if __name__ == '__main__':
     threading.Timer(1.0, open_browser).start()
     app.run(host='0.0.0.0', port=5000, debug=True)
+@app.route('/painel')
+def painel():
+    pedidos = []
+    for i, line in enumerate(db._read_lines(db.PEDIDOS_FILE), start=1):
+        parts = line.split('|')
+        if len(parts) >= 5:
+            pedidos.append({
+                'id': i,
+                'cpf': parts[0],
+                'data_hora': parts[1],
+                'itens': parts[2],
+                'total': parts[3],
+                'status': parts[4]
+            })
+    return render_template('painel.html', pedidos=pedidos)
+
+@app.route('/alterar_status/<int:pid>', methods=['POST'])
+def alterar_status(pid):
+    novo_status = request.form.get('status')
+    ok = db.atualizar_status(pid, novo_status)
+    return redirect(url_for('painel'))
