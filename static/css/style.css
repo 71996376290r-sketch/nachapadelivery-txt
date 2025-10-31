@@ -1,10 +1,142 @@
-body { font-family: Arial, sans-serif; background: #0f0f0f; color: #fff; margin:0; padding:0;}
-.card { background: #1c1c1c; padding: 18px; border-radius: 10px; width: 380px; margin: 60px auto; text-align:center; }
-input { padding: 10px; margin: 8px 0; width: 90%; border-radius: 6px; border: none; background:#2b2b2b; color:#fff; }
-button { padding: 10px 16px; border-radius:6px; border:none; background:#ffb347; color:#111; cursor:pointer; }
-header { background:#111; color:#ffb347; text-align:center; padding:12px; font-size:20px; }
-.container { display:flex; flex-wrap:wrap; gap:12px; padding:14px; justify-content:center; }
-.card img { border-radius:8px; }
-.qtd { display:flex; align-items:center; gap:8px; justify-content:center; margin-top:8px; }
-.btn-qtd { width:34px; height:34px; border-radius:6px; background:#333; color:#fff; border:none; font-size:18px; }
-.qtd-num { min-width:28px; display:inline-block; text-align:center; }
+/* ======= Configuração geral ======= */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #0b0b0b;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+  font-size: 18px; /* texto base maior */
+}
+
+/* ======= Cabeçalho ======= */
+header {
+  background: #111;
+  color: #ffb347;
+  text-align: center;
+  padding: 22px;
+  font-size: 2em;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* ======= Container de produtos ======= */
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 26px;
+  padding: 25px;
+}
+
+/* ======= Card de produto ======= */
+.card {
+  background: #1a1a1a;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  padding: 22px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(255, 179, 71, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 18px rgba(255, 179, 71, 0.4);
+}
+
+/* ======= Imagem ======= */
+.card img {
+  width: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+  max-height: 450px;
+}
+
+/* ======= Nome e preço ======= */
+.card h3 {
+  margin: 16px 0 8px;
+  font-size: 1.8em;
+  color: #ffb347;
+}
+
+.card p {
+  font-size: 1.4em;
+  margin: 0 0 14px;
+}
+
+/* ======= Controle de quantidade ======= */
+.qtd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.btn-qtd {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #333;
+  color: #fff;
+  border: 2px solid #ffb347;
+  font-size: 2em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-qtd:hover {
+  background: #ffb347;
+  color: #111;
+}
+
+.qtd-num {
+  min-width: 40px;
+  font-size: 1.6em;
+  font-weight: bold;
+  display: inline-block;
+}
+
+/* ======= Botão de finalizar pedido ======= */
+#finalizar {
+  display: block;
+  width: 90%;
+  max-width: 500px;
+  margin: 40px auto;
+  background: #ffb347;
+  color: #111;
+  border: none;
+  padding: 20px;
+  font-size: 1.5em;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+#finalizar:hover {
+  background: #ffc76b;
+}
+
+/* ======= Inputs e botões ======= */
+input,
+button {
+  font-size: 1.2em;
+}
+
+/* ======= Responsividade ======= */
+@media (max-width: 768px) {
+  body {
+    font-size: 20px;
+  }
+  .card h3 {
+    font-size: 2em;
+  }
+  .card p {
+    font-size: 1.6em;
+  }
+  #finalizar {
+    font-size: 1.6em;
+  }
+}

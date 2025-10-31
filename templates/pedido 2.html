@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Monte seu Pedido - Na Chapa Hall</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #222;
+      text-align: center;
+      padding: 15px;
+      font-size: 22px;
+      color: #ffb347;
+      letter-spacing: 1px;
+    }
+
+    .container {
+      padding: 60px;
+    }
+
+    h2 {
+      color: #ffb347;
+      border-bottom: 1px solid #ffb347;
+      padding-bottom: 5px;
+      margin-top: 30px;
+    }
+
+    .categoria {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .card {
+      background-color: #222;
+      border-radius: 10px;
+      overflow: hidden;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    .card h3 {
+      margin: 10px 0 5px;
+      color: #fff;
+    }
+
+    .card p {
+      margin: 0;
+      color: #ffb347;
+    }
+
+    .qtd {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .btn-qtd {
+      background: #ffb347;
+      color: #111;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 0;
+    }
+
+    .btn-qtd:hover {
+      background: #ff9800;
+    }
+
+    #finalizar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #ffb347;
+      color: #111;
+      text-align: center;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: 0.3s;
+    }
+
+    #finalizar:hover {
+      background-color: #ff9800;
+    }
+  </style>
+</head>
+<body>
+  <header>🍔 Monte seu Pedido - Na Chapa Hall</header>
+  <div class="container">
+    <h2>🍔 Lanches</h2>
+    <div class="categoria">
+      <div class="card" data-nome="Hall Burger" data-preco="22">
+        <img src="{{ url_for('static', filename='img/burgers/hallburger.png') }}" alt="Hall Burger">
+        <h3>Hall Burger</h3>
+        <p>R$ 22,00</p>
+        <div class="qtd">
+          <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+        </div>
+      </div>
+
+      <div class="card" data-nome="Big Cupim" data-preco="28">
+        <img src="{{ url_for('static', filename='img/burgers/bigcupim.png') }}" alt="Big Cupim">
+        <h3>Big Cupim</h3>
+        <p>R$ 28,00</p>
+        <div class="qtd">
+          <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+        </div>
+      </div>
+	  <div class="card" data-preco="0">>
+	   <p>R$ 0,00</p>
+	      <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+	  </div>
+    </div>
+
+    <h2>🍟 Acompanhamentos</h2>
+    <div class="categoria">
+      <div class="card" data-nome="Batata Frita" data-preco="10">
+        <img src="{{ url_for('static', filename='img/acompanhamentos/batata.png') }}" alt="Batata Frita">
+        <h3>Batata Frita</h3>
+        <p>R$ 10,00</p>
+        <div class="qtd">
+          <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+        </div>
+      </div>
+	  	  <div class="card" data-preco="0">>
+	   <p>R$ 0,00</p>
+	      <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+	  </div>
+	  	  <div class="card" data-preco="0">>
+	   <p>R$ 0,00</p>
+	      <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+	  </div>
+    </div>
+
+    <h2>🥤 Bebidas</h2>
+    <div class="categoria">
+      <div class="card" data-nome="Refrigerante Lata" data-preco="6">
+        <img src="{{ url_for('static', filename='img/bebidas/refri.png') }}" alt="Refrigerante">
+        <h3>Refrigerante Lata</h3>
+        <p>R$ 6,00</p>
+        <div class="qtd">
+          <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+        </div>
+      </div>
+
+		  <div class="card" data-preco="0">>
+	   <p>R$ 0,00</p>
+	      <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+	  </div>
+	  	  <div class="card" data-preco="0">>
+	   <p>R$ 0,00</p>
+	      <button class="btn-qtd" onclick="alterarQtd(this, -1)">−</button>
+          <span class="qtd-num">0</span>
+          <button class="btn-qtd" onclick="alterarQtd(this, 1)">+</button>
+	  </div>
+  </div>
+
+  <button id="finalizar" onclick="finalizar_pedido()">Finalizar Pedido - Total: R$ <span id='total'>0,00</span></button>
+
+  <script>
+    let total = 0;
+
+    function alterarQtd(btn, delta) {
+      const card = btn.closest('.card');
+      const qtdSpan = card.querySelector('.qtd-num');
+      let qtd = parseInt(qtdSpan.textContent) + delta;
+      if (qtd < 0) qtd = 0;
+      qtdSpan.textContent = qtd;
+      atualizarTotal();
+    }
+
+    function atualizarTotal() {
+      total = 0;
+      document.querySelectorAll('.card').forEach(card => {
+        const qtd = parseInt(card.querySelector('.qtd-num').textContent);
+        const preco = parseFloat(card.dataset.preco);
+        total += qtd * preco;
+      });
+      document.getElementById('total').textContent = total.toFixed(2).replace('.', ',');
+    }
+
+    function finalizar_pedido() {
+      const itens = [];
+      document.querySelectorAll('.card').forEach(card => {
+        const qtd = parseInt(card.querySelector('.qtd-num').textContent);
+        if (qtd > 0) {
+          itens.push({
+            nome: card.dataset.nome,
+            qtd: qtd,
+            preco: parseFloat(card.dataset.preco)
+          });
+        }
+      });
+
+      if (itens.length === 0) {
+        alert("Adicione ao menos 1 item ao pedido!");
+        return;
+      }
+
+      fetch('/salvar_pedido', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({itens: itens})
+      })
+      .then(r => r.json())
+      .then(res => {
+        alert("Pedido realizado com sucesso!");
+        window.location.href = "/";
+      });
+    }
+  </script>
+</body>
+</html>

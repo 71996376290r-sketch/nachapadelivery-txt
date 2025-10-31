@@ -2,7 +2,7 @@
 <header>🍔 Monte seu Pedido - Na Chapa Hall</header>
 <div class="container">{% for p in produtos %}
   <div class="card" data-id="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco }}">
-    <img src="{{ url_for('static', filename=p.imagem.replace('static/','')) if p.imagem else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.nome }}" style="width:140px;height:100px;object-fit:cover;">
+    <img src="{{ url_for('static', filename=p.imagem.replace('static/','')) if p.imagem else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.nome }}">
     <h3>{{ p.nome }}</h3><p>R$ {{ '%.2f'|format(p.preco) }}</p>
     <div class="qtd"><button class="btn-qtd" onclick="alterarQtd(this,-1)">−</button><span class="qtd-num">0</span><button class="btn-qtd" onclick="alterarQtd(this,1)">+</button></div>
   </div>{% endfor %}</div>
