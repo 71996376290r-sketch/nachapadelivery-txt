@@ -88,7 +88,8 @@ def ler_pedidos():
 def salvar_pedidos(pedidos):
     with open(PEDIDOS_TXT, "w", encoding="utf-8") as f:
         for p in pedidos:
-            f.write(f"{p['nome']}|{p['cpf']}|{p['itens']}|{p['total']}|{p['status']}\n")
+            line = f"{p['nome']}|{p['cpf']}|{p['itens']}|{p['total']}|{p['status']}\n"
+            f.write(line)
 
 @app.route("/painel")
 def painel():
