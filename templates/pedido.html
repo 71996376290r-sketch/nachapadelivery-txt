@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><title>Monte seu Pedido</title><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head><body>
+<header>🍔 Monte seu Pedido - Na Chapa Hall</header>
+<div class="container">{% for p in produtos %}
+  <div class="card" data-id="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco }}">
+    <img src="{{ url_for('static', filename=p.imagem.replace('static/','')) if p.imagem else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.nome }}" style="width:140px;height:100px;object-fit:cover;">
+    <h3>{{ p.nome }}</h3><p>R$ {{ '%.2f'|format(p.preco) }}</p>
+    <div class="qtd"><button class="btn-qtd" onclick="alterarQtd(this,-1)">−</button><span class="qtd-num">0</span><button class="btn-qtd" onclick="alterarQtd(this,1)">+</button></div>
+  </div>{% endfor %}</div>
+<button id="finalizar" onclick="finalizarPedido()">Finalizar Pedido - Total: R$ <span id='total'>0,00</span></button>
+<script>
+function alterarQtd(btn,delta){const card=btn.closest('.card');const s=card.querySelector('.qtd-num');let q=parseInt(s.textContent)+delta;if(q<0)q=0;s.textContent=q;atualizarTotal();}
+function atualizarTotal(){let total=0;document.querySelectorAll('.card').forEach(c=>{const q=parseInt(c.querySelector('.qtd-num').textContent);const p=parseFloat(c.dataset.preco);total+=q*p});document.getElementById('total').textContent=total.toFixed(2).replace('.',',')}
+async function finalizarPedido(){const itens=[];document.querySelectorAll('.card').forEach(c=>{const q=parseInt(c.querySelector('.qtd-num').textContent);if(q>0)itens.push({id:c.dataset.id,nome:c.dataset.nome,qtd:q,preco:c.dataset.preco})});if(itens.length===0){alert('Adicione ao menos 1 item');return;}const cpf='{{ cliente.cpf }}';const payload={cpf:cpf,itens:itens};const res=await fetch('/salvar_pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await res.json();if(j.status==='ok'){window.location.href='/confirmacao/'+j.pedido_id;}else{alert('Erro ao salvar')}}</script></body></html>
