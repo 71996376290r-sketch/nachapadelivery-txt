@@ -48,3 +48,16 @@ def inserir_pedido(cpf, itens_list, total):
         f.write(line)
     lines = _read_lines(PEDIDOS_FILE)
     return len(lines)
+def atualizar_status(pedido_id, novo_status):
+    linhas = _read_lines(PEDIDOS_FILE)
+    if 0 < pedido_id <= len(linhas):
+        partes = linhas[pedido_id - 1].split('|')
+        if len(partes) < 5:
+            partes.append(novo_status)
+        else:
+            partes[4] = novo_status
+        linhas[pedido_id - 1] = '|'.join(partes)
+        with open(PEDIDOS_FILE, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(linhas) + '\n')
+        return True
+    return False
