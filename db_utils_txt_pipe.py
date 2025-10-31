@@ -27,8 +27,7 @@ def inserir_cliente(cpf, nome, telefone, endereco):
     existing = buscar_cliente_cpf(cpf) if cpf else None
     if existing:
         return existing
-    line = f"{cpf}|{nome}|{telefone}|{endereco}\n"
-    with open(CLIENTES_FILE, 'a', encoding='utf-8') as f:
+    line = f"{cpf}|{data_hora}|{itens_str}|R${float(total):.2f}|Recebido\n"
         f.write(line)
     return {'cpf': cpf, 'nome': nome, 'telefone': telefone, 'endereco': endereco}
 
