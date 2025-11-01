@@ -1,30 +1,33 @@
+
 <!DOCTYPE html>
-<html lang='pt-BR'>
-<head><meta charset='utf-8'><title>Cadastro</title><link rel='stylesheet' href="{{ url_for('static', filename='css/style.css') }}">
-</head><body>
-<div class="container">
-<div class='inic'><h2>Cadastro do Cliente</h2>
-<style>
-  input[type='text'] {
-    display: block;
-    margin-bottom: 15px;
-    padding: 8px;
-    width: 100%;
-    box-sizing: border-box;
-  }
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <main class="inic">
+      <h2>Cadastro do Cliente</h2>
 
-  .qtd-num {
-    margin-top: 20px;
-  }
-</style>
+      <form method="post" action="/salvar_cliente" class="cpf-form" autocomplete="on">
+        <label for="nome" class="sr-only">Nome completo</label>
+        <input id="nome" type="text" name="nome" placeholder="Nome completo" required autocomplete="name">
 
+        <label for="cpf" class="sr-only">CPF</label>
+        <input id="cpf" type="text" name="cpf" placeholder="CPF" value="{{ cpf }}" required inputmode="numeric" pattern="\d{11}" maxlength="11" title="Digite 11 dígitos numéricos">
 
-<form method='post' action='/salvar_cliente'>
-<input type='text' name='nome' placeholder='Nome completo' required>
-<input type='text' name='cpf' placeholder='CPF' value='{{ cpf }}'>
-<input type='text' name='telefone' placeholder='Telefone' required>
-<input type='text' name='endereco' placeholder='Endereço' required>
-<div class='qtd-num'><button type='submit'>Continuar</button></div>
-</form>
-</div></div>
-</body></html>
+        <label for="telefone" class="sr-only">Telefone</label>
+        <input id="telefone" type="text" name="telefone" placeholder="Telefone" required inputmode="tel" pattern="\d{10,11}" maxlength="11" title="Digite o telefone sem espaços ou traços">
+
+        <label for="endereco" class="sr-only">Endereço</label>
+        <input id="endereco" type="text" name="endereco" placeholder="Endereço" required autocomplete="street-address">
+
+        <button type="submit" class="btn-primary">Continuar</button>
+      </form>
+    </main>
+  </div>
+</body>
+</html>
