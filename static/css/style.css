@@ -154,3 +154,105 @@ button {
     font-size: 1.6em;
   }
 }
+/* Mobile-first base */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #0b0b0b;
+  color: #fff;
+  font-size: 16px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Container centralizado */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Card inicial */
+.inic {
+  width: 100%;
+  max-width: 420px;
+  background: #1a1a1a;
+  border-radius: 14px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6), 0 0 12px rgba(255,179,71,0.12);
+}
+
+/* Título */
+.inic h1 {
+  margin: 0 0 18px;
+  font-size: 1.4rem;
+  color: #ffb347;
+  line-height: 1.1;
+}
+
+/* Form layout */
+.cpf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* Input full width */
+.cpf-form input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #0f0f0f;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+/* Input focus */
+.cpf-form input[type="text"]:focus {
+  border-color: #ffb347;
+  box-shadow: 0 0 0 4px rgba(255,179,71,0.06);
+}
+
+/* Primary button */
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #ffb347;
+  color: #111;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.08s ease, filter 0.08s;
+}
+
+/* Button active / hover */
+.btn-primary:hover { filter: brightness(0.98); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* Accessibility helper (visually hidden) */
+.sr-only {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+/* Larger screens adjustments */
+@media (min-width: 769px) {
+  body { font-size: 18px; }
+  .inic { padding: 40px; max-width: 520px; border-radius: 16px; }
+  .inic h1 { font-size: 1.8rem; }
+  .btn-primary { padding: 14px; font-size: 1.05rem; }
+}
