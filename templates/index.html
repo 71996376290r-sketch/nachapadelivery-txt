@@ -1,28 +1,22 @@
-<!DOCTYPE html>
-<html lang='pt-BR'>
-<head><meta charset='utf-8'>
-<title>Na Chapa Delivery</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head><body>
+DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Na Chapa Delivery</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <main class="inic">
+      <h1>Na Chapa Delivery</h1>
 
-<div class="container">
-<div class='inic'><h1>Na Chapa Delivery</h1>
-
-<style>
-  input[type='text'] {
-    display: block;
-    margin-bottom: 15px;
-    padding: 8px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .qtd-num {
-    margin-top: 20px;
-  }
-</style>
-
-<form method='post' action='/verificar_cpf'>
-<input type='text' name='cpf' placeholder='Digite seu CPF' required>
-<div class='qtd-num'><button type='submit'>Continuar</button></form></div></div>
- </body></html></div>
+      <form method="post" action="/verificar_cpf" class="cpf-form" autocomplete="on">
+        <label for="cpf" class="sr-only">CPF</label>
+        <input id="cpf" type="text" name="cpf" placeholder="Digite seu CPF" required inputmode="numeric" pattern="\d{11}" maxlength="11" title="Digite 11 dígitos numéricos">
+        <button type="submit" class="btn-primary">Continuar</button>
+      </form>
+    </main>
+  </div>
+</body>
+</html>
