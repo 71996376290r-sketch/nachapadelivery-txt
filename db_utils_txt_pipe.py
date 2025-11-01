@@ -1,87 +1,65 @@
-import os, webbrowser, threading
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-import db_utils_txt_pipe as db
+import os
+from datetime import datetime
 
-app = Flask(__name__)
+BASE = os.path.dirname(__file__)
+DATA_DIR = os.path.join(BASE, 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+CLIENTES_FILE = os.path.join(DATA_DIR, 'clientes.txt')
+PEDIDOS_FILE = os.path.join(DATA_DIR, 'pedidos.txt')
 
-@app.route('/verificar_cpf', methods=['POST'])
-def verificar_cpf():
-    cpf = request.form.get('cpf','').strip()
-    cliente = db.buscar_cliente_cpf(cpf)
-    if cliente:
-        produtos = db.listar_produtos()
-        return render_template('pedido.html', cliente=cliente, produtos=produtos)
-    else:
-        return redirect(url_for('cadastro', cpf=cpf))
+def _read_lines(path):
+    if not os.path.exists(path):
+        return []
+    with open(path, 'r', encoding='utf-8') as f:
+        return [l.rstrip('\n') for l in f if l.strip()]
 
-@app.route('/cadastro')
-def cadastro():
-    cpf = request.args.get('cpf','')
-    return render_template('cadastro.html', cpf=cpf)
-
-@app.route('/salvar_cliente', methods=['POST'])
-def salvar_cliente():
-    nome = request.form.get('nome')
-    cpf = request.form.get('cpf','').strip()
-    telefone = request.form.get('telefone','')
-    endereco = request.form.get('endereco','')
-    cliente = db.inserir_cliente(cpf, nome, telefone, endereco)
-    produtos = db.listar_produtos()
-    return render_template('pedido.html', cliente=cliente, produtos=produtos)
-
-@app.route('/salvar_pedido', methods=['POST'])
-def salvar_pedido():
-    data = request.get_json() or request.form
-    cpf = data.get('cpf') or data.get('id_cliente') or ''
-    try:
-        cpf = str(cpf)
-    except:
-        cpf = ''
-    itens = data.get('itens') or []
-    total = 0.0
-    if isinstance(itens, str):
-        import json
-        itens = json.loads(itens)
-    for it in itens:
-        total += float(it.get('preco',0)) * int(it.get('qtd',0))
-    pedido_id = db.inserir_pedido(cpf, itens, total)
-    return jsonify({'status':'ok','pedido_id': pedido_id, 'mensagem':'Pedido salvo (TXT) com sucesso!'})
-
-@app.route('/confirmacao/<int:pid>')
-def confirmacao(pid):
-    return render_template('confirmacao.html', pedido_id=pid)
-@app.route('/painel')
-def painel():
-    pedidos = []
-    for i, line in enumerate(db._read_lines(db.PEDIDOS_FILE), start=1):
+def buscar_cliente_cpf(cpf):
+    cpf = (cpf or '').strip()
+    for line in _read_lines(CLIENTES_FILE):
         parts = line.split('|')
-        if len(parts) >= 5:
-            pedidos.append({
-                'id': i,
-                'cpf': parts[0],
-                'data_hora': parts[1],
-                'itens': parts[2],
-                'total': parts[3],
-                'status': parts[4]
-            })
-    return render_template('painel.html', pedidos=pedidos)
+        if parts and parts[0] == cpf:
+            return {'cpf': parts[0], 'nome': parts[1], 'telefone': parts[2], 'endereco': parts[3] if len(parts)>3 else ''}
+    return None
 
-@app.route('/alterar_status/<int:pid>', methods=['POST'])
-def alterar_status(pid):
-    novo_status = request.form.get('status')
-    ok = db.atualizar_status(pid, novo_status)
-    return redirect(url_for('painel'))
+def inserir_cliente(cpf, nome, telefone, endereco):
+    cpf = (cpf or '').strip()
+    existing = buscar_cliente_cpf(cpf) if cpf else None
+    if existing:
+        return existing
+    line = f"{cpf}|{nome}|{telefone}|{endereco}\n"
+    with open(CLIENTES_FILE, 'a', encoding='utf-8') as f:
+        f.write(line)
+    return {'cpf': cpf, 'nome': nome, 'telefone': telefone, 'endereco': endereco}
 
-def open_browser():
-    try:
-        webbrowser.open('http://127.0.0.1:5000')
-    except:
-        pass
+def listar_produtos():
+    return [
+        {'id':1, 'nome':'Hall Burger', 'categoria':'Burgers', 'preco':25.00, 'imagem':'static/img/burgers/hallburger.jpg'},
+        {'id':2, 'nome':'Big Cupim', 'categoria':'Burgers', 'preco':28.00, 'imagem':'static/img/burgers/bigcupim.jpg'},
+        {'id':3, 'nome':'Batata', 'categoria':'Acompanhamentos', 'preco':8.00, 'imagem':'static/img/acompanhamentos/batata.jpg'},
+        {'id':4, 'nome':'Refrigerante', 'categoria':'Bebidas', 'preco':6.00, 'imagem':'static/img/bebidas/refri.jpg'},
+    ]
 
-if __name__ == '__main__':
-    threading.Timer(1.0, open_browser).start()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+def inserir_pedido(cpf, itens_list, total):
+    data_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    itens_str = ', '.join([f"{it['nome']} x{it['qtd']} (R${float(it['preco']):.2f})" for it in itens_list])
+    line = f"{cpf}|{data_hora}|{itens_str}|R${float(total):.2f}|Recebido\n"
+    with open(PEDIDOS_FILE, 'a', encoding='utf-8') as f:
+        f.write(line)
+    lines = _read_lines(PEDIDOS_FILE)
+    return len(lines)
+    
+    
+def atualizar_status(pedido_id, novo_status):
+    linhas = _read_lines(PEDIDOS_FILE)
+    if 0 < pedido_id <= len(linhas):
+        partes = linhas[pedido_id - 1].split('|')
+        if len(partes) < 5:
+            partes.append(novo_status)
+        else:
+            partes[4] = novo_status
+        linhas[pedido_id - 1] = '|'.join(partes)
+        with open(PEDIDOS_FILE, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(linhas) + '\n')
+        return True
+    return False
