@@ -24,7 +24,7 @@ header {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 36px;
+  gap: 26px;
   padding: 25px;
 }
 
@@ -35,6 +35,20 @@ header {
   width: 90%;
   max-width: 400px;
   padding: 22px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(255, 179, 71, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.inic {
+  font-size: 19px;
+  margin: 16px 0 8px;
+  background: #1a1a1a;
+  border-radius: 20px;
+  height: 500px;
+  width: 90%;
+  max-width: 400px;
+  padding: 90px;
   text-align: center;
   box-shadow: 0 0 12px rgba(255, 179, 71, 0.25);
   transition: transform 0.2s, box-shadow 0.2s;
