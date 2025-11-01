@@ -1,110 +1,87 @@
-import os
+import os, webbrowser, threading
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+import db_utils_txt_pipe as db
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CLIENTES_TXT = os.path.join(BASE_DIR, "clientes.txt")
-PEDIDOS_TXT = os.path.join(BASE_DIR, "pedidos.txt")
+app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# ==========================
-# CLIENTES
-# ==========================
-def carregar_clientes():
-    clientes = []
-    if os.path.exists(CLIENTES_TXT):
-        with open(CLIENTES_TXT, "r", encoding="utf-8") as f:
-            for line in f:
-                dados = line.strip().split("|")
-                if len(dados) == 4:
-                    nome, cpf, telefone, endereco = dados
-                    clientes.append({
-                        "nome": nome,
-                        "cpf": cpf,
-                        "telefone": telefone,
-                        "endereco": endereco
-                    })
-    return clientes
+@app.route('/verificar_cpf', methods=['POST'])
+def verificar_cpf():
+    cpf = request.form.get('cpf','').strip()
+    cliente = db.buscar_cliente_cpf(cpf)
+    if cliente:
+        produtos = db.listar_produtos()
+        return render_template('pedido.html', cliente=cliente, produtos=produtos)
+    else:
+        return redirect(url_for('cadastro', cpf=cpf))
 
+@app.route('/cadastro')
+def cadastro():
+    cpf = request.args.get('cpf','')
+    return render_template('cadastro.html', cpf=cpf)
 
-def salvar_clientes(clientes):
-    with open(CLIENTES_TXT, "w", encoding="utf-8") as f:
-        for c in clientes:
-            line = f"{c['nome']}|{c['cpf']}|{c['telefone']}|{c['endereco']}\n"
-            f.write(line)
+@app.route('/salvar_cliente', methods=['POST'])
+def salvar_cliente():
+    nome = request.form.get('nome')
+    cpf = request.form.get('cpf','').strip()
+    telefone = request.form.get('telefone','')
+    endereco = request.form.get('endereco','')
+    cliente = db.inserir_cliente(cpf, nome, telefone, endereco)
+    produtos = db.listar_produtos()
+    return render_template('pedido.html', cliente=cliente, produtos=produtos)
 
+@app.route('/salvar_pedido', methods=['POST'])
+def salvar_pedido():
+    data = request.get_json() or request.form
+    cpf = data.get('cpf') or data.get('id_cliente') or ''
+    try:
+        cpf = str(cpf)
+    except:
+        cpf = ''
+    itens = data.get('itens') or []
+    total = 0.0
+    if isinstance(itens, str):
+        import json
+        itens = json.loads(itens)
+    for it in itens:
+        total += float(it.get('preco',0)) * int(it.get('qtd',0))
+    pedido_id = db.inserir_pedido(cpf, itens, total)
+    return jsonify({'status':'ok','pedido_id': pedido_id, 'mensagem':'Pedido salvo (TXT) com sucesso!'})
 
-def buscar_cliente_cpf(cpf):
-    clientes = carregar_clientes()
-    for c in clientes:
-        if c["cpf"] == cpf:
-            return c
-    return None
-
-
-def inserir_cliente(nome, cpf, telefone, endereco):
-    clientes = carregar_clientes()
-    clientes.append({
-        "nome": nome,
-        "cpf": cpf,
-        "telefone": telefone,
-        "endereco": endereco
-    })
-    salvar_clientes(clientes)
-
-
-# ==========================
-# PRODUTOS
-# ==========================
-def listar_produtos():
-    return [
-        {"id": 1, "nome": "Hall Burger", "preco": 22.50, "categoria": "Burgers", "img": "/static/img/burgers/hallburger.jpg"},
-        {"id": 2, "nome": "Big Cupim", "preco": 28.90, "categoria": "Burgers", "img": "/static/img/burgers/bigcupim.jpg"},
-        {"id": 3, "nome": "Batata Frita", "preco": 10.00, "categoria": "Acompanhamentos", "img": "/static/img/acompanhamentos/batata.jpg"},
-        {"id": 4, "nome": "Refrigerante", "preco": 6.00, "categoria": "Bebidas", "img": "/static/img/bebidas/refri.jpg"}
-    ]
-
-
-# ==========================
-# PEDIDOS
-# ==========================
-def carregar_pedidos():
+@app.route('/confirmacao/<int:pid>')
+def confirmacao(pid):
+    return render_template('confirmacao.html', pedido_id=pid)
+@app.route('/painel')
+def painel():
     pedidos = []
-    if os.path.exists(PEDIDOS_TXT):
-        with open(PEDIDOS_TXT, "r", encoding="utf-8") as f:
-            for line in f:
-                dados = line.strip().split("|")
-                if len(dados) == 5:
-                    nome, cpf, itens, total, status = dados
-                    pedidos.append({
-                        "nome": nome,
-                        "cpf": cpf,
-                        "itens": itens,
-                        "total": float(total),
-                        "status": status
-                    })
-    return pedidos
+    for i, line in enumerate(db._read_lines(db.PEDIDOS_FILE), start=1):
+        parts = line.split('|')
+        if len(parts) >= 5:
+            pedidos.append({
+                'id': i,
+                'cpf': parts[0],
+                'data_hora': parts[1],
+                'itens': parts[2],
+                'total': parts[3],
+                'status': parts[4]
+            })
+    return render_template('painel.html', pedidos=pedidos)
 
+@app.route('/alterar_status/<int:pid>', methods=['POST'])
+def alterar_status(pid):
+    novo_status = request.form.get('status')
+    ok = db.atualizar_status(pid, novo_status)
+    return redirect(url_for('painel'))
 
-def salvar_pedidos(pedidos):
-    with open(PEDIDOS_TXT, "w", encoding="utf-8") as f:
-        for p in pedidos:
-            line = f"{p['nome']}|{p['cpf']}|{p['itens']}|{p['total']}|{p['status']}\n"
-            f.write(line)
+def open_browser():
+    try:
+        webbrowser.open('http://127.0.0.1:5000')
+    except:
+        pass
 
-
-def inserir_pedido(nome, cpf, itens, total):
-    pedidos = carregar_pedidos()
-    pedidos.append({
-        "nome": nome,
-        "cpf": cpf,
-        "itens": itens,
-        "total": total,
-        "status": "Recebido"
-    })
-    salvar_pedidos(pedidos)
-
-
-def atualizar_status_pedido(index, novo_status):
-    pedidos = carregar_pedidos()
-    if 0 <= index < len(pedidos):
-        pedidos[index]["status"] = novo_status
-        salvar_pedidos(pedidos)
+if __name__ == '__main__':
+    threading.Timer(1.0, open_browser).start()
+    app.run(host='0.0.0.0', port=5000, debug=True)
