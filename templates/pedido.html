@@ -188,9 +188,9 @@
       }
       const total = document.getElementById('total').textContent;
       // Se seu backend espera form POST, você pode adaptar para criar um form e submit.
-      // Aqui envio JSON para /criar_pedido (ajuste conforme sua rota)
+      // Aqui envio JSON para /salvar_pedido (ajuste conforme sua rota)
       try {
-        const resp = await fetch('/criar_pedido', {
+        const resp = await fetch('/salvar_pedido', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ itens, total })
