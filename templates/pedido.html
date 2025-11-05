@@ -39,10 +39,7 @@
 
   <main class="container">
 
-    <div class="cpf-box">
-      <label for="cpf"><strong>Digite seu CPF:</strong></label><br>
-      <input id="cpf" name="cpf" type="text" maxlength="11" placeholder="Somente números" required>
-    </div>
+  
 
     {% for grupo in produtos|groupby('categoria') %}
       <section class="categoria" id="cat-{{ loop.index }}">
