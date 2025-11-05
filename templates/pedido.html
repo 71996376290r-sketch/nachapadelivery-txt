@@ -134,7 +134,7 @@
     return;
   }
 
-  const total = document.getElementById('total').textContent.replace('R$','').replace(',','.').trim();
+  const total = document.getElementById('total').textContent.replace('R$', '').replace(',', '.').trim();
 
   try {
     const resp = await fetch('/salvar_pedido', {
@@ -142,9 +142,10 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ itens, total })
     });
+
     const data = await resp.json();
     if (data.redirect) {
-      window.location.href = data.redirect;
+      window.location.href = data.redirect; // Vai para a tela de CPF
     } else {
       alert('Erro ao prosseguir.');
     }
