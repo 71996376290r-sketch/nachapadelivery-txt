@@ -128,44 +128,32 @@
       });
     }
   });
+
   if (itens.length === 0) {
     alert('Selecione pelo menos um item para continuar.');
     return;
   }
 
-  const total = document.getElementById('total').textContent;
-  const pedido = { itens, total };
+  const total = document.getElementById('total').textContent.replace('R$','').replace(',','.').trim();
 
-  // Redireciona para a tela de CPF, passando o pedido em JSON
-  const pedido_json = encodeURIComponent(JSON.stringify(pedido));
-  window.location.href = `/index?pedido_json=${pedido_json}`;
+  try {
+    const resp = await fetch('/salvar_pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itens, total })
+    });
+    const data = await resp.json();
+    if (data.redirect) {
+      window.location.href = data.redirect;
+    } else {
+      alert('Erro ao prosseguir.');
+    }
+  } catch (err) {
+    alert('Erro de conexão: ' + err.message);
+  }
 }
 
-     
-      
-
-      try {
-        const resp = await fetch('/salvar_pedido', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cpf, itens })
-        });
-        const data = await resp.json();
-
-        if (resp.ok && data.status === 'ok') {
-          alert(data.mensagem);
-          window.location.href = '/confirmacao/' + data.pedido_id;
-        } else if (data.redirect) {
-          alert(data.mensagem);
-          window.location.href = data.redirect;
-        } else {
-          alert(data.mensagem || 'Erro ao salvar pedido.');
-        }
-      } catch (err) {
-        alert('Erro de conexão: ' + err.message);
-      }
-    }
-
+  
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.card').forEach(c => atualizarItemSubtotal(c));
       atualizarTotal();
