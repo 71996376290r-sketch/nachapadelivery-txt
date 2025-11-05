@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
@@ -5,39 +6,15 @@
   <title>Monte seu Pedido</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    /* Ajustes específicos para a página de pedido (pode copiar para style.css) */
     .page-header { text-align:center; margin: 12px 0; font-size:1.25rem; background:#111; color:#ffb347; padding:14px; border-radius:12px; }
+    .cpf-box { text-align:center; margin:20px 0; }
+    .cpf-box input { padding:8px; width:200px; border-radius:8px; border:1px solid #444; text-align:center; }
     .categoria { width:100%; margin: 12px 0; }
-    .cat-toggle {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      width:100%;
-      background:transparent;
-      border:1px solid #2a2a2a;
-      color:inherit;
-      padding:12px 14px;
-      border-radius:10px;
-      font-weight:700;
-      cursor:pointer;
-    }
+    .cat-toggle { display:flex; justify-content:space-between; align-items:center; width:100%; background:transparent; border:1px solid #2a2a2a; color:inherit; padding:12px 14px; border-radius:10px; font-weight:700; cursor:pointer; }
     .cat-toggle .chev { transform: rotate(0deg); transition: transform .18s ease; }
     .cat-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
-    .products-grid {
-      margin-top:10px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap:14px;
-    }
-    .card {
-      display:flex;
-      gap:12px;
-      align-items:center;
-      background:#1a1a1a;
-      padding:12px;
-      border-radius:12px;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
-    }
+    .products-grid { margin-top:10px; display:grid; grid-template-columns:1fr; gap:14px; }
+    .card { display:flex; gap:12px; align-items:center; background:#1a1a1a; padding:12px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,0.5); }
     .card img { width:84px; height:64px; object-fit:cover; border-radius:8px; flex-shrink:0; }
     .card .meta { flex:1; text-align:left; }
     .card h3 { margin:0 0 6px; font-size:1rem; color:#ffb347; }
@@ -47,86 +24,61 @@
     .btn-qtd { width:44px; height:44px; border-radius:10px; background:#333; color:#fff; border:2px solid #ffb347; font-size:1.2rem; cursor:pointer; }
     .qtd-num { min-width:26px; text-align:center; font-weight:700; }
     .subtotal { font-size:0.95rem; color:#fff; background:rgba(255,179,71,0.06); padding:4px 8px; border-radius:8px; }
-    /* Finalizar fixo em mobile */
-    .footer-actions { position: sticky; bottom: 12px; display:block; padding:0 12px; max-width:1200px; margin:12px auto 28px; }
+    .footer-actions { position:sticky; bottom:12px; display:block; padding:0 12px; max-width:1200px; margin:12px auto 28px; }
     #finalizar { width:100%; padding:14px; border-radius:12px; border:none; background:#ffb347; color:#111; font-weight:800; font-size:1.05rem; cursor:pointer; box-shadow:0 6px 18px rgba(255,179,71,0.12); }
-    /* Desktop: grid de 2 colunas por categoria e botão não-fixo */
-    @media (min-width: 769px) {
-      .products-grid { grid-template-columns: 1fr 1fr; }
+    @media (min-width:769px) {
+      .products-grid { grid-template-columns:1fr 1fr; }
       .card img { width:110px; height:78px; }
-      .footer-actions { position: static; margin-top:20px; max-width:520px; }
+      .footer-actions { position:static; margin-top:20px; max-width:520px; }
       #finalizar { max-width:520px; margin:0 auto; }
     }
   </style>
 </head>
 <body>
   <header class="page-header">🍔 Monte seu Pedido - Na Chapa Delivery</header>
-  
-    <main class="container">
+
+  <main class="container">
+
+    <div class="cpf-box">
+      <label for="cpf"><strong>Digite seu CPF:</strong></label><br>
+      <input id="cpf" name="cpf" type="text" maxlength="11" placeholder="Somente números" required>
+    </div>
+
     {% for grupo in produtos|groupby('categoria') %}
       <section class="categoria" id="cat-{{ loop.index }}">
         <button class="cat-toggle" type="button" aria-expanded="true" data-target="#cat-body-{{ loop.index }}">
           <span>{{ grupo.grouper }}</span>
-          <span>
-            <small class="cat-count">({{ grupo.list|length }})</small>
-            <span class="chev">▾</span>
-          </span>
+          <span><small class="cat-count">({{ grupo.list|length }})</small> <span class="chev">▾</span></span>
         </button>
-            <div class="products-grid" id="cat-body-{{ loop.index }}">
-      {% for p in grupo.list %}
-        <article class="card" data-id="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco }}">
-          <img src="{{ url_for('static', filename=p.imagem.replace('static/','')) if p.imagem else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.nome }}">
-          <div class="meta">
-            <h3>{{ p.nome }}</h3>
-            <p class="price">R$ {{ '%.2f'|format(p.preco) }}</p>
-          </div>
-
-          <div class="controls" aria-hidden="false">
-            <div class="qtd" role="group" aria-label="Quantidade">
-              <button class="btn-qtd" type="button" onclick="alterarQtd(this,-1)" aria-label="Diminuir">−</button>
-              <span class="qtd-num" aria-live="polite">0</span>
-              <button class="btn-qtd" type="button" onclick="alterarQtd(this,1)" aria-label="Aumentar">+</button>
+        <div class="products-grid" id="cat-body-{{ loop.index }}">
+          {% for p in grupo.list %}
+          <article class="card" data-id="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco }}">
+            <img src="{{ url_for('static', filename=p.imagem.replace('static/','')) if p.imagem else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.nome }}">
+            <div class="meta">
+              <h3>{{ p.nome }}</h3>
+              <p class="price">R$ {{ '%.2f'|format(p.preco) }}</p>
             </div>
-            <div class="subtotal">R$ <span class="item-sub">0,00</span></div>
-          </div>
-        </article>
-      {% endfor %}
+            <div class="controls">
+              <div class="qtd">
+                <button class="btn-qtd" type="button" onclick="alterarQtd(this,-1)">−</button>
+                <span class="qtd-num">0</span>
+                <button class="btn-qtd" type="button" onclick="alterarQtd(this,1)">+</button>
+              </div>
+              <div class="subtotal">R$ <span class="item-sub">0,00</span></div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+
+    <div class="footer-actions">
+      <button id="finalizar" onclick="finalizarPedido()">Finalizar Pedido — Total: R$ <span id="total">0,00</span></button>
     </div>
-  </section>
-{% endfor %}
-
-<div class="footer-actions">
-  <button id="finalizar" onclick="finalizarPedido()" aria-live="polite">
-    Finalizar Pedido — Total: R$ <span id="total">0,00</span>
-  </button>
-</div>
-
-<a href="https://nachapahallchat.onrender.com" target="_blank">Abrir Chat</a>
-
-<style>
-  .chat-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #ff6600;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-  }
-
-  .chat-link:hover {
-    background-color: #e65c00;
-  }
-</style>
-
-
-</main>
+  </main>
 
   <script>
-    // Helpers
-    function toBRL(n) {
-      return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    function toBRL(n) { return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
     function alterarQtd(btn, delta) {
       const card = btn.closest('.card');
@@ -141,9 +93,7 @@
     function atualizarItemSubtotal(card) {
       const q = parseInt(card.querySelector('.qtd-num').textContent || '0', 10);
       const preco = parseFloat(card.dataset.preco || 0);
-      const sub = q * preco;
-      const el = card.querySelector('.item-sub');
-      if (el) el.textContent = toBRL(sub);
+      card.querySelector('.item-sub').textContent = toBRL(q * preco);
     }
 
     function atualizarTotal() {
@@ -156,20 +106,22 @@
       document.getElementById('total').textContent = toBRL(total);
     }
 
-    // Toggle categorias (colapsável)
     document.querySelectorAll('.cat-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = document.querySelector(btn.dataset.target);
         const expanded = btn.getAttribute('aria-expanded') === 'true';
         btn.setAttribute('aria-expanded', String(!expanded));
-        if (target) {
-          target.style.display = expanded ? 'none' : '';
-        }
+        if (target) target.style.display = expanded ? 'none' : '';
       });
     });
 
-    // Finalizar pedido: monta payload e envia (ajuste endpoint conforme backend)
     async function finalizarPedido() {
+      const cpf = document.getElementById('cpf').value.trim();
+      if (!cpf || cpf.length !== 11 || isNaN(cpf)) {
+        alert('Digite um CPF válido com 11 números.');
+        return;
+      }
+
       const itens = [];
       document.querySelectorAll('.card').forEach(c => {
         const q = parseInt(c.querySelector('.qtd-num').textContent || '0', 10);
@@ -182,40 +134,38 @@
           });
         }
       });
+
       if (itens.length === 0) {
-        alert('Selecione pelo menos um item para continuar.');
+        alert('Selecione pelo menos um item.');
         return;
       }
-      const total = document.getElementById('total').textContent;
-      // Se seu backend espera form POST, você pode adaptar para criar um form e submit.
-      // Aqui envio JSON para /salvar_pedido (ajuste conforme sua rota)
+
       try {
         const resp = await fetch('/salvar_pedido', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itens, total })
+          body: JSON.stringify({ cpf, itens })
         });
-        if (resp.ok) {
-          const data = await resp.json().catch(()=>null);
-          // redireciona se backend retornar URL ou mostra mensagem
-          if (data && data.redirect) window.location = data.redirect;
-          else window.location.reload();
+        const data = await resp.json();
+
+        if (resp.ok && data.status === 'ok') {
+          alert(data.mensagem);
+          window.location.href = '/confirmacao/' + data.pedido_id;
+        } else if (data.redirect) {
+          alert(data.mensagem);
+          window.location.href = data.redirect;
         } else {
-          const text = await resp.text();
-          alert('Erro ao enviar pedido: ' + text);
+          alert(data.mensagem || 'Erro ao salvar pedido.');
         }
       } catch (err) {
         alert('Erro de conexão: ' + err.message);
       }
     }
 
-    // Inicializa subtotais ao carregar
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.card').forEach(c => atualizarItemSubtotal(c));
       atualizarTotal();
     });
   </script>
-  </body>
-  </HTML>
-        
-        
+</body>
+</html>
