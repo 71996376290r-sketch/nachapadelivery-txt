@@ -5,12 +5,9 @@ from psycopg2 import sql
 # Função de conexão e criação das tabelas
 # -----------------------------------------
 def conectar_banco():
-        conn = psycopg2.connect(
-        dbname="halldb",
-        user="halldb_user",
-        password="dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0",
-        host="@dpg-d43e2ommcj7s73b062jg-a",
-        port="5432"
+        conn = psycopg2.connect(DATABASE_URL=postgres://halldb_user:YOUR_PASSWORD@dpg-d43e2ommcj7s73b062jg-a.oregon-postgres.render.com:5432/halldb
+PORT=3000
+        
     )
     return conn
 
