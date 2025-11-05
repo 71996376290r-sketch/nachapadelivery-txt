@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('pedido.html')
 
 @app.route('/verificar_cpf', methods=['POST'])
 def verificar_cpf():
