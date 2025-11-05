@@ -3,23 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Confirmar CPF - Na Chapa Delivery</title>
+  <title>Na Chapa Delivery</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
   <div class="container">
     <main class="inic">
       <h1>Na Chapa Delivery</h1>
-      <h2>Confirme seu CPF para finalizar o pedido</h2>
 
-      <form method="post" action="/confirmar_cpf" class="cpf-form" autocomplete="on">
+      <form method="post" action="/verificar_cpf" class="cpf-form" autocomplete="on">
         <label for="cpf" class="sr-only">CPF</label>
         <input id="cpf" type="text" name="cpf" placeholder="Digite seu CPF" required inputmode="numeric" pattern="\d{11}" maxlength="11" title="Digite 11 dígitos numéricos">
-
-        <!-- Campo oculto para guardar os itens e total -->
-        <input type="hidden" name="pedido_json" value="{{ pedido_json }}">
-
-        <button type="submit" class="btn-primary">Finalizar Pedido</button>
+        <button type="submit" class="btn-primary">Continuar</button>
       </form>
     </main>
   </div>
