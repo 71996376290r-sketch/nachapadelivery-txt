@@ -5,11 +5,12 @@ from psycopg2 import sql
 # Função de conexão e criação das tabelas
 # -----------------------------------------
 def conectar_banco():
-        conn = psycopg2.connect(
-                "postgresql://halldb_user:dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0@dpg-d43e2ommcj7s73b062jg-a/halldb"
-        
+    conn = psycopg2.connect(
+        "postgresql://halldb_user:dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0@dpg-d43e2ommcj7s73b062jg-a/halldb"
     )
     return conn
+
+
 
 
 def inicializar_banco():
