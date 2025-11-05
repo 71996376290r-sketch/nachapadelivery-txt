@@ -116,29 +116,33 @@
     });
 
     async function finalizarPedido() {
-      const cpf = document.getElementById('cpf').value.trim();
-      if (!cpf || cpf.length !== 11 || isNaN(cpf)) {
-        alert('Digite um CPF válido com 11 números.');
-        return;
-      }
-
-      const itens = [];
-      document.querySelectorAll('.card').forEach(c => {
-        const q = parseInt(c.querySelector('.qtd-num').textContent || '0', 10);
-        if (q > 0) {
-          itens.push({
-            id: c.dataset.id,
-            nome: c.dataset.nome,
-            preco: parseFloat(c.dataset.preco || 0),
-            qtd: q
-          });
-        }
+  const itens = [];
+  document.querySelectorAll('.card').forEach(c => {
+    const q = parseInt(c.querySelector('.qtd-num').textContent || '0', 10);
+    if (q > 0) {
+      itens.push({
+        id: c.dataset.id,
+        nome: c.dataset.nome,
+        preco: parseFloat(c.dataset.preco || 0),
+        qtd: q
       });
+    }
+  });
+  if (itens.length === 0) {
+    alert('Selecione pelo menos um item para continuar.');
+    return;
+  }
 
-      if (itens.length === 0) {
-        alert('Selecione pelo menos um item.');
-        return;
-      }
+  const total = document.getElementById('total').textContent;
+  const pedido = { itens, total };
+
+  // Redireciona para a tela de CPF, passando o pedido em JSON
+  const pedido_json = encodeURIComponent(JSON.stringify(pedido));
+  window.location.href = `/index?pedido_json=${pedido_json}`;
+}
+
+     
+      
 
       try {
         const resp = await fetch('/salvar_pedido', {
