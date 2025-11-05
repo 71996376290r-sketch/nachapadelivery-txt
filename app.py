@@ -3,20 +3,36 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, s
 import db_utils_txt_pipe as db
 
 app = Flask(__name__)
-app.secret_key = 'nachapa2025'  # Necessário para guardar pedido temporariamente
+app.secret_key = 'nachapa2025'  # Necessário para sessão
 
+# 🏠 Tela inicial agora é o pedido direto
 @app.route('/')
 def index():
-    # Página inicial agora mostra diretamente o pedido
     produtos = db.listar_produtos()
     return render_template('pedido.html', produtos=produtos)
 
+# 🧾 Rota que salva o pedido temporariamente e redireciona pra CPF
+@app.route('/salvar_pedido', methods=['POST'])
+def salvar_pedido():
+    data = request.get_json() or {}
+    itens = data.get('itens') or []
+    total = data.get('total') or 0.0
+
+    # Guarda pedido temporariamente na sessão
+    session['pedido_temp'] = {'itens': itens, 'total': total}
+    return jsonify({'redirect': url_for('cpf_page')})
+
+# 📄 Tela de CPF (antigo index.html)
+@app.route('/cpf')
+def cpf_page():
+    return render_template('index.html')
+
+# 🔍 Verifica CPF — se existir, salva pedido; se não, vai pra cadastro
 @app.route('/verificar_cpf', methods=['POST'])
 def verificar_cpf():
     cpf = request.form.get('cpf', '').strip()
-
-    # Recupera o pedido salvo temporariamente
     pedido_data = session.get('pedido_temp')
+
     if not pedido_data:
         return "Erro: pedido não encontrado na sessão.", 400
 
@@ -33,11 +49,13 @@ def verificar_cpf():
         session['cpf_cadastro'] = cpf
         return redirect(url_for('cadastro'))
 
+# 👤 Tela de cadastro
 @app.route('/cadastro')
 def cadastro():
     cpf = session.get('cpf_cadastro', '')
     return render_template('cadastro.html', cpf=cpf)
 
+# 💾 Salva novo cliente e o pedido (se houver)
 @app.route('/salvar_cliente', methods=['POST'])
 def salvar_cliente():
     nome = request.form.get('nome')
@@ -45,9 +63,9 @@ def salvar_cliente():
     telefone = request.form.get('telefone', '')
     endereco = request.form.get('endereco', '')
 
-    cliente = db.inserir_cliente(cpf, nome, telefone, endereco)
+    db.inserir_cliente(cpf, nome, telefone, endereco)
 
-    # Após cadastrar, se existir pedido temporário, salva ele
+    # Se ainda houver pedido pendente → salva agora
     pedido_data = session.pop('pedido_temp', None)
     if pedido_data:
         itens = pedido_data.get('itens', [])
@@ -55,27 +73,14 @@ def salvar_cliente():
         pedido_id = db.inserir_pedido(cpf, itens, total)
         return redirect(url_for('confirmacao', pid=pedido_id))
 
-    produtos = db.listar_produtos()
-    return render_template('pedido.html', cliente=cliente, produtos=produtos)
+    return redirect(url_for('index'))
 
-@app.route('/salvar_pedido', methods=['POST'])
-def salvar_pedido():
-    data = request.get_json() or {}
-    itens = data.get('itens') or []
-    total = data.get('total') or 0.0
-
-    # Salva o pedido na sessão antes de verificar CPF
-    session['pedido_temp'] = {'itens': itens, 'total': total}
-    return jsonify({'redirect': url_for('cpf_page')})
-
-@app.route('/cpf')
-def cpf_page():
-    return render_template('index.html')
-
+# ✅ Tela de confirmação
 @app.route('/confirmacao/<int:pid>')
 def confirmacao(pid):
     return render_template('confirmacao.html', pedido_id=pid)
 
+# 📋 Painel administrativo
 @app.route('/painel')
 def painel():
     pedidos = []
@@ -98,6 +103,7 @@ def alterar_status(pid):
     db.atualizar_status(pid, novo_status)
     return redirect(url_for('painel'))
 
+# 🚀 Abrir automaticamente no navegador
 def open_browser():
     try:
         webbrowser.open('http://127.0.0.1:5000')
