@@ -6,10 +6,11 @@ from psycopg2 import sql
 # -----------------------------------------
 def conectar_banco():
     conn = psycopg2.connect(
-        host="dpg-d43e2ommcj7s73b062jg-a",
-        dbname="halldb",
-        user="halldb_user",
-        password="dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0"
+Server [localhost]: dpg-d43e2ommcj7s73b062jg-a.oregon-postgres.render.com
+Database [postgres]: halldb
+Port [5432]: 
+Username [postgres]: halldb_user
+Password for user halldb_user: dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0
     )
     return conn
 
