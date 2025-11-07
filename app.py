@@ -1,7 +1,6 @@
 import os, webbrowser, threading, json
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
-import db_utils_txt_pipe as db
-
+import db_utils_pg as db
 app = Flask(__name__)
 app.secret_key = 'nachapa2025'  # Necessário para sessão
 
@@ -110,6 +109,8 @@ def open_browser():
     except:
         pass
 
+
 if __name__ == '__main__':
+    db.inicializar_banco()
     threading.Timer(1.0, open_browser).start()
     app.run(host='0.0.0.0', port=5000, debug=True)
