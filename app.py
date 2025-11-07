@@ -1,6 +1,7 @@
 import os, webbrowser, threading, json
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import db_utils_pg as db
+produtos = db.listar_produtos()
 app = Flask(__name__)
 app.secret_key = 'nachapa2025'  # Necessário para sessão
 
