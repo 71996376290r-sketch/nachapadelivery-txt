@@ -1,114 +1,115 @@
-from flask import Flask, render_template, request, jsonify
-import psycopg2
-import os
+import os, webbrowser, threading, json
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+import db_utils_txt_pipe as db
 
 app = Flask(__name__)
+app.secret_key = 'nachapa2025'  # Necessário para sessão
 
-# -----------------------------
-# 🔧 Conexão com o banco
-# -----------------------------
-def get_connection():
-    return psycopg2.connect(
-        host="dpg-d43e2ommcj7s73b062jg-a.oregon-postgres.render.com",
-        dbname="halldb",
-        user="halldb_user",
-        password="dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0"
-    )
-
-# -----------------------------
-# 🗃️ Inicializa o banco (se necessário)
-# -----------------------------
-def inicializar_banco():
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
-
-        # Cria tabela de clientes
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS clientes (
-                id SERIAL PRIMARY KEY,
-                nome VARCHAR(100) NOT NULL,
-                cpf VARCHAR(14) UNIQUE NOT NULL
-            );
-        """)
-
-        # Cria tabela de pedidos
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS pedidos (
-                id SERIAL PRIMARY KEY,
-                cliente_id INTEGER REFERENCES clientes(id),
-                total NUMERIC(10,2) NOT NULL,
-                data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-        conn.commit()
-        cur.close()
-        conn.close()
-        print("✅ Banco inicializado com sucesso!")
-    except Exception as e:
-        print(f"⚠️ Erro ao inicializar o banco: {e}")
-
-# -----------------------------
-# 🌐 Página principal
-# -----------------------------
+# 🏠 Tela inicial agora é o pedido direto
 @app.route('/')
 def index():
-    return render_template('index.html')
+    produtos = db.listar_produtos()
+    return render_template('pedido.html', produtos=produtos)
 
-# -----------------------------
-# 💾 Rota para salvar pedido
-# -----------------------------
+# 🧾 Rota que salva o pedido temporariamente e redireciona pra CPF
 @app.route('/salvar_pedido', methods=['POST'])
 def salvar_pedido():
-    data = request.get_json()
-    nome = data.get('nome')
-    cpf = data.get('cpf')
-    total = data.get('total')
+    data = request.get_json() or {}
+    itens = data.get('itens') or []
+    total = data.get('total') or 0.0
 
+    # Guarda pedido temporariamente na sessão
+    session['pedido_temp'] = {'itens': itens, 'total': total}
+    return jsonify({'redirect': url_for('cpf_page')})
+
+# 📄 Tela de CPF (antigo index.html)
+@app.route('/cpf')
+def cpf_page():
+    return render_template('index.html')
+
+# 🔍 Verifica CPF — se existir, salva pedido; se não, vai pra cadastro
+@app.route('/verificar_cpf', methods=['POST'])
+def verificar_cpf():
+    cpf = request.form.get('cpf', '').strip()
+    pedido_data = session.get('pedido_temp')
+
+    if not pedido_data:
+        return "Erro: pedido não encontrado na sessão.", 400
+
+    cliente = db.buscar_cliente_cpf(cpf)
+    if cliente:
+        # Cliente existe → salva pedido
+        itens = pedido_data.get('itens', [])
+        total = float(pedido_data.get('total', 0))
+        pedido_id = db.inserir_pedido(cpf, itens, total)
+        session.pop('pedido_temp', None)
+        return redirect(url_for('confirmacao', pid=pedido_id))
+    else:
+        # Cliente não existe → vai pra tela de cadastro
+        session['cpf_cadastro'] = cpf
+        return redirect(url_for('cadastro'))
+
+# 👤 Tela de cadastro
+@app.route('/cadastro')
+def cadastro():
+    cpf = session.get('cpf_cadastro', '')
+    return render_template('cadastro.html', cpf=cpf)
+
+# 💾 Salva novo cliente e o pedido (se houver)
+@app.route('/salvar_cliente', methods=['POST'])
+def salvar_cliente():
+    nome = request.form.get('nome')
+    cpf = request.form.get('cpf', '').strip()
+    telefone = request.form.get('telefone', '')
+    endereco = request.form.get('endereco', '')
+
+    db.inserir_cliente(cpf, nome, telefone, endereco)
+
+    # Se ainda houver pedido pendente → salva agora
+    pedido_data = session.pop('pedido_temp', None)
+    if pedido_data:
+        itens = pedido_data.get('itens', [])
+        total = float(pedido_data.get('total', 0))
+        pedido_id = db.inserir_pedido(cpf, itens, total)
+        return redirect(url_for('confirmacao', pid=pedido_id))
+
+    return redirect(url_for('index'))
+
+# ✅ Tela de confirmação
+@app.route('/confirmacao/<int:pid>')
+def confirmacao(pid):
+    return render_template('confirmacao.html', pedido_id=pid)
+
+# 📋 Painel administrativo
+@app.route('/painel')
+def painel():
+    pedidos = []
+    for i, line in enumerate(db._read_lines(db.PEDIDOS_FILE), start=1):
+        parts = line.split('|')
+        if len(parts) >= 5:
+            pedidos.append({
+                'id': i,
+                'cpf': parts[0],
+                'data_hora': parts[1],
+                'itens': parts[2],
+                'total': parts[3],
+                'status': parts[4]
+            })
+    return render_template('painel.html', pedidos=pedidos)
+
+@app.route('/alterar_status/<int:pid>', methods=['POST'])
+def alterar_status(pid):
+    novo_status = request.form.get('status')
+    db.atualizar_status(pid, novo_status)
+    return redirect(url_for('painel'))
+
+# 🚀 Abrir automaticamente no navegador
+def open_browser():
     try:
-        conn = get_connection()
-        cur = conn.cursor()
+        webbrowser.open('http://127.0.0.1:5000')
+    except:
+        pass
 
-        # Verifica se o cliente já existe
-        cur.execute("SELECT id FROM clientes WHERE cpf = %s;", (cpf,))
-        cliente = cur.fetchone()
-
-        if cliente:
-            cliente_id = cliente[0]
-            print(f"👤 Cliente já existe: ID {cliente_id}")
-        else:
-            cur.execute(
-                "INSERT INTO clientes (nome, cpf) VALUES (%s, %s) RETURNING id;",
-                (nome, cpf)
-            )
-            cliente_id = cur.fetchone()[0]
-            print(f"✅ Novo cliente salvo: ID {cliente_id}")
-
-        # Salva o pedido vinculado ao cliente
-        cur.execute(
-            "INSERT INTO pedidos (cliente_id, total) VALUES (%s, %s) RETURNING id;",
-            (cliente_id, total)
-        )
-        pedido_id = cur.fetchone()[0]
-        conn.commit()
-
-        print(f"🧾 Pedido salvo com sucesso! ID do pedido: {pedido_id}")
-        return jsonify({"mensagem": "Pedido salvo no banco com sucesso!"}), 200
-
-    except Exception as e:
-        print(f"⚠️ Erro ao salvar pedido no banco: {e}")
-        return jsonify({"erro": str(e)}), 500
-
-    finally:
-        if conn:
-            cur.close()
-            conn.close()
-
-# -----------------------------
-# 🚀 Inicializa app
-# -----------------------------
 if __name__ == '__main__':
-    inicializar_banco()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    threading.Timer(1.0, open_browser).start()
+    app.run(host='0.0.0.0', port=5000, debug=True)
