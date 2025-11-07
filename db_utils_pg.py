@@ -11,7 +11,7 @@ def inicializar_banco():
     conn = conectar()
     cur = conn.cursor()
 
-    # Tabela de clientes
+    # 🧍 Clientes
     cur.execute("""
         CREATE TABLE IF NOT EXISTS clientes (
             id SERIAL PRIMARY KEY,
@@ -22,19 +22,7 @@ def inicializar_banco():
         );
     """)
 
-    # Tabela de produtos (agora com categoria)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS produtos (
-            id SERIAL PRIMARY KEY,
-            nome TEXT NOT NULL,
-            descricao TEXT,
-            preco NUMERIC(10,2) NOT NULL,
-            categoria TEXT DEFAULT 'Outros',
-            imagem TEXT
-        );
-    """)
-
-    # Tabela de pedidos
+    # 🧾 Pedidos
     cur.execute("""
         CREATE TABLE IF NOT EXISTS pedidos (
             id SERIAL PRIMARY KEY,
@@ -44,66 +32,86 @@ def inicializar_banco():
         );
     """)
 
-    # Tabela itens do pedido
+    # 🧺 Itens do pedido
     cur.execute("""
         CREATE TABLE IF NOT EXISTS pedido_itens (
             id SERIAL PRIMARY KEY,
             pedido_id INTEGER REFERENCES pedidos(id),
-            produto_id INTEGER REFERENCES produtos(id),
+            produto_id INTEGER,
             quantidade INTEGER,
             preco_unit NUMERIC(10,2)
         );
     """)
 
-    # 🛠️ Corrige se faltar a coluna 'categoria'
-    cur.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name='produtos' AND column_name='categoria'
-            ) THEN
-                ALTER TABLE produtos ADD COLUMN categoria TEXT DEFAULT 'Outros';
-            END IF;
-        END $$;
-    """)
+    # 🛠️ Corrige ou recria tabela produtos se estiver com estrutura antiga
+    try:
+        cur.execute("SELECT id, nome, preco FROM produtos LIMIT 1;")
+    except psycopg2.Error:
+        print("⚙️ Corrigindo estrutura da tabela produtos...")
+
+        cur.execute("DROP TABLE IF EXISTS produtos CASCADE;")
+        cur.execute("""
+            CREATE TABLE produtos (
+                id SERIAL PRIMARY KEY,
+                nome TEXT NOT NULL,
+                descricao TEXT,
+                preco NUMERIC(10,2) NOT NULL,
+                categoria TEXT DEFAULT 'Outros',
+                imagem TEXT
+            );
+        """)
+
+        # 👇 Insere alguns produtos padrão pra facilitar teste
+        cur.executemany("""
+            INSERT INTO produtos (nome, descricao, preco, categoria, imagem) VALUES (%s, %s, %s, %s, %s);
+        """, [
+            ('X-Burger', 'Pão, carne, queijo e maionese da casa', 18.00, 'Lanches', 'img/xburger.jpg'),
+            ('X-Salada', 'Pão, carne, queijo, alface, tomate e maionese', 20.00, 'Lanches', 'img/xsalada.jpg'),
+            ('Coca-Cola Lata', '350ml bem gelada', 6.00, 'Bebidas', 'img/coca.jpg'),
+            ('Batata Frita', 'Porção média crocante', 12.00, 'Acompanhamentos', 'img/batata.jpg'),
+            ('Brownie', 'Chocolate com calda', 10.00, 'Sobremesas', 'img/brownie.jpg')
+        ])
 
     conn.commit()
     cur.close()
     conn.close()
     print("✅ Banco inicializado com sucesso!")
 
+# 🧍 Inserir ou atualizar cliente
 def inserir_cliente(cpf, nome, telefone, endereco):
     conn = conectar()
     cur = conn.cursor()
-    cur.execute("INSERT INTO clientes (cpf, nome, telefone, endereco) VALUES (%s, %s, %s, %s) ON CONFLICT (cpf) DO NOTHING;", 
-                (cpf, nome, telefone, endereco))
+    cur.execute("""
+        INSERT INTO clientes (cpf, nome, telefone, endereco)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome;
+    """, (cpf, nome, telefone, endereco))
     conn.commit()
     cur.close()
     conn.close()
     print(f"✅ Cliente {nome} salvo no banco!")
 
+# 🔍 Buscar cliente por CPF
 def buscar_cliente_cpf(cpf):
     conn = conectar()
     cur = conn.cursor()
     cur.execute("SELECT id, nome, telefone, endereco FROM clientes WHERE cpf = %s;", (cpf,))
-    cliente = cur.fetchone()
+    c = cur.fetchone()
     cur.close()
     conn.close()
-    if cliente:
-        return {'id': cliente[0], 'nome': cliente[1], 'telefone': cliente[2], 'endereco': cliente[3]}
-    return None
+    return {'id': c[0], 'nome': c[1], 'telefone': c[2], 'endereco': c[3]} if c else None
 
+# 💾 Inserir pedido
 def inserir_pedido(cpf, itens, total):
     conn = conectar()
     cur = conn.cursor()
 
     cur.execute("SELECT id FROM clientes WHERE cpf = %s;", (cpf,))
-    cliente = cur.fetchone()
-    if not cliente:
+    c = cur.fetchone()
+    if not c:
         print("❌ Cliente não encontrado.")
         return None
-    cliente_id = cliente[0]
+    cliente_id = c[0]
 
     cur.execute("INSERT INTO pedidos (cliente_id, total) VALUES (%s, %s) RETURNING id;", (cliente_id, total))
     pedido_id = cur.fetchone()[0]
@@ -120,6 +128,7 @@ def inserir_pedido(cpf, itens, total):
     print(f"✅ Pedido {pedido_id} salvo com sucesso!")
     return pedido_id
 
+# 📋 Listar pedidos
 def listar_pedidos():
     conn = conectar()
     cur = conn.cursor()
@@ -129,11 +138,12 @@ def listar_pedidos():
         JOIN clientes c ON c.id = p.cliente_id
         ORDER BY p.data_hora DESC;
     """)
-    pedidos = [{'id': row[0], 'cliente': row[1], 'total': float(row[2]), 'data': row[3].strftime("%d/%m %H:%M")} for row in cur.fetchall()]
+    pedidos = [{'id': r[0], 'cliente': r[1], 'total': float(r[2]), 'data': r[3].strftime("%d/%m %H:%M")} for r in cur.fetchall()]
     cur.close()
     conn.close()
     return pedidos
 
+# 🍔 Listar produtos (com categoria)
 def listar_produtos():
     conn = conectar()
     cur = conn.cursor()
