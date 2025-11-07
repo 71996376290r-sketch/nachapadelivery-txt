@@ -35,6 +35,13 @@ def inicializar_banco():
     if not conn:
         print("⚠️ Banco indisponível, usando modo arquivo.")
         return
+cur = conn.cursor()
+cur.execute("ALTER TABLE pedidos ADD COLUMN cpf VARCHAR(20);")
+conn.commit()
+cur.close()
+conn.close()
+print("✅ Coluna CPF adicionada!")
+
 
     cur = conn.cursor()
     cur.execute("""
