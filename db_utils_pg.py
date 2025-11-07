@@ -1,172 +1,148 @@
 import psycopg2
-import os
+from psycopg2 import sql
 from datetime import datetime
 
-# Configuração do banco (Render)
-DB_URL = os.getenv("DATABASE_URL", "postgresql://halldb_user:dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0@dpg-d43e2ommcj7s73b062jg-a/halldb")
+DB_URL = "postgresql://halldb_user:dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0@dpg-d43e2ommcj7s73b062jg-a/halldb"
 
-def get_conn():
+def conectar():
     return psycopg2.connect(DB_URL)
 
-# Inicializa todas as tabelas
 def inicializar_banco():
-    conn = get_conn()
+    conn = conectar()
     cur = conn.cursor()
 
     # Tabela de clientes
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS clientes (
-        cpf VARCHAR(14) PRIMARY KEY,
-        nome TEXT NOT NULL,
-        telefone TEXT,
-        endereco TEXT
-    );
+        CREATE TABLE IF NOT EXISTS clientes (
+            id SERIAL PRIMARY KEY,
+            cpf VARCHAR(14) UNIQUE NOT NULL,
+            nome TEXT NOT NULL,
+            telefone TEXT,
+            endereco TEXT
+        );
     """)
 
-    # Tabela de produtos
+    # Tabela de produtos (agora com categoria)
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS produtos (
-        id SERIAL PRIMARY KEY,
-        descricao TEXT NOT NULL,
-        preco NUMERIC(10,2) NOT NULL,
-        categoria TEXT
-    );
+        CREATE TABLE IF NOT EXISTS produtos (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            descricao TEXT,
+            preco NUMERIC(10,2) NOT NULL,
+            categoria TEXT DEFAULT 'Outros',
+            imagem TEXT
+        );
     """)
 
     # Tabela de pedidos
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS pedidos (
-        id SERIAL PRIMARY KEY,
-        cliente_cpf VARCHAR(14) REFERENCES clientes(cpf),
-        data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        total NUMERIC(10,2),
-        status TEXT DEFAULT 'Pendente'
-    );
+        CREATE TABLE IF NOT EXISTS pedidos (
+            id SERIAL PRIMARY KEY,
+            cliente_id INTEGER REFERENCES clientes(id),
+            total NUMERIC(10,2),
+            data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     """)
 
-    # Tabela de itens
+    # Tabela itens do pedido
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS itens_pedido (
-        id SERIAL PRIMARY KEY,
-        pedido_id INTEGER REFERENCES pedidos(id) ON DELETE CASCADE,
-        produto_id INTEGER REFERENCES produtos(id),
-        quantidade INTEGER,
-        subtotal NUMERIC(10,2)
-    );
+        CREATE TABLE IF NOT EXISTS pedido_itens (
+            id SERIAL PRIMARY KEY,
+            pedido_id INTEGER REFERENCES pedidos(id),
+            produto_id INTEGER REFERENCES produtos(id),
+            quantidade INTEGER,
+            preco_unit NUMERIC(10,2)
+        );
     """)
 
-    # Verifica se já existem produtos
-    cur.execute("SELECT COUNT(*) FROM produtos;")
-    count = cur.fetchone()[0]
-
-    if count == 0:
-        produtos_iniciais = [
-            ("X-Burger", 15.00, "Lanches"),
-            ("X-Salada", 17.00, "Lanches"),
-            ("Refrigerante Lata", 6.00, "Bebidas"),
-            ("Batata Frita", 10.00, "Acompanhamentos"),
-            ("Combo Completo", 35.00, "Combos")
-        ]
-        cur.executemany(
-            "INSERT INTO produtos (descricao, preco, categoria) VALUES (%s, %s, %s);",
-            produtos_iniciais
-        )
-        print("🍔 Produtos iniciais inseridos!")
+    # 🛠️ Corrige se faltar a coluna 'categoria'
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='produtos' AND column_name='categoria'
+            ) THEN
+                ALTER TABLE produtos ADD COLUMN categoria TEXT DEFAULT 'Outros';
+            END IF;
+        END $$;
+    """)
 
     conn.commit()
     cur.close()
     conn.close()
     print("✅ Banco inicializado com sucesso!")
 
-# Função para listar produtos (agora com categoria!)
-def listar_produtos():
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT id, descricao, preco, categoria FROM produtos ORDER BY categoria, id;")
-    produtos = [
-        {"id": r[0], "descricao": r[1], "preco": float(r[2]), "categoria": r[3] or "Outros"}
-        for r in cur.fetchall()
-    ]
-    cur.close()
-    conn.close()
-    return produtos
-
-# CRUD clientes
-def buscar_cliente_cpf(cpf):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT cpf, nome, telefone, endereco FROM clientes WHERE cpf = %s;", (cpf,))
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    if row:
-        return {"cpf": row[0], "nome": row[1], "telefone": row[2], "endereco": row[3]}
-    return None
-
 def inserir_cliente(cpf, nome, telefone, endereco):
-    conn = get_conn()
+    conn = conectar()
     cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO clientes (cpf, nome, telefone, endereco) VALUES (%s, %s, %s, %s) ON CONFLICT (cpf) DO NOTHING;",
-        (cpf, nome, telefone, endereco)
-    )
+    cur.execute("INSERT INTO clientes (cpf, nome, telefone, endereco) VALUES (%s, %s, %s, %s) ON CONFLICT (cpf) DO NOTHING;", 
+                (cpf, nome, telefone, endereco))
     conn.commit()
     cur.close()
     conn.close()
     print(f"✅ Cliente {nome} salvo no banco!")
 
-# Inserir pedido + itens
-def inserir_pedido(cpf, itens, total):
-    conn = get_conn()
+def buscar_cliente_cpf(cpf):
+    conn = conectar()
     cur = conn.cursor()
-    try:
-        cur.execute("INSERT INTO pedidos (cliente_cpf, total) VALUES (%s, %s) RETURNING id;", (cpf, total))
-        pedido_id = cur.fetchone()[0]
+    cur.execute("SELECT id, nome, telefone, endereco FROM clientes WHERE cpf = %s;", (cpf,))
+    cliente = cur.fetchone()
+    cur.close()
+    conn.close()
+    if cliente:
+        return {'id': cliente[0], 'nome': cliente[1], 'telefone': cliente[2], 'endereco': cliente[3]}
+    return None
 
-        for item in itens:
-            produto_id = item.get("id")
-            qtd = item.get("quantidade", 1)
-            subtotal = float(item.get("subtotal", 0))
-            cur.execute(
-                "INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, subtotal) VALUES (%s, %s, %s, %s);",
-                (pedido_id, produto_id, qtd, subtotal)
-            )
+def inserir_pedido(cpf, itens, total):
+    conn = conectar()
+    cur = conn.cursor()
 
-        conn.commit()
-        print(f"🧾 Pedido {pedido_id} salvo com sucesso!")
-        return pedido_id
-
-    except Exception as e:
-        conn.rollback()
-        print(f"⚠️ Erro ao salvar pedido: {e}")
+    cur.execute("SELECT id FROM clientes WHERE cpf = %s;", (cpf,))
+    cliente = cur.fetchone()
+    if not cliente:
+        print("❌ Cliente não encontrado.")
         return None
-    finally:
-        cur.close()
-        conn.close()
+    cliente_id = cliente[0]
 
-# Listar pedidos
+    cur.execute("INSERT INTO pedidos (cliente_id, total) VALUES (%s, %s) RETURNING id;", (cliente_id, total))
+    pedido_id = cur.fetchone()[0]
+
+    for item in itens:
+        cur.execute("""
+            INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco_unit)
+            VALUES (%s, %s, %s, %s);
+        """, (pedido_id, item['id'], item['qtd'], item['preco']))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print(f"✅ Pedido {pedido_id} salvo com sucesso!")
+    return pedido_id
+
 def listar_pedidos():
-    conn = get_conn()
+    conn = conectar()
     cur = conn.cursor()
     cur.execute("""
-        SELECT p.id, c.nome, p.total, p.status, p.data_hora
+        SELECT p.id, c.nome, p.total, p.data_hora
         FROM pedidos p
-        LEFT JOIN clientes c ON p.cliente_cpf = c.cpf
+        JOIN clientes c ON c.id = p.cliente_id
         ORDER BY p.data_hora DESC;
     """)
-    pedidos = [
-        {"id": r[0], "cliente": r[1], "total": float(r[2]), "status": r[3], "data_hora": r[4].strftime("%d/%m %H:%M")}
-        for r in cur.fetchall()
-    ]
+    pedidos = [{'id': row[0], 'cliente': row[1], 'total': float(row[2]), 'data': row[3].strftime("%d/%m %H:%M")} for row in cur.fetchall()]
     cur.close()
     conn.close()
     return pedidos
 
-# Atualizar status
-def atualizar_status(pedido_id, novo_status):
-    conn = get_conn()
+def listar_produtos():
+    conn = conectar()
     cur = conn.cursor()
-    cur.execute("UPDATE pedidos SET status = %s WHERE id = %s;", (novo_status, pedido_id))
-    conn.commit()
+    cur.execute("""
+        SELECT id, nome, preco, COALESCE(categoria, 'Outros'), imagem 
+        FROM produtos 
+        ORDER BY categoria, nome;
+    """)
+    produtos = [{'id': r[0], 'nome': r[1], 'preco': float(r[2]), 'categoria': r[3], 'imagem': r[4]} for r in cur.fetchall()]
     cur.close()
-    conn.close() 
+    conn.close()
+    return produtos
