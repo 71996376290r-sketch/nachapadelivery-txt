@@ -169,4 +169,4 @@ def atualizar_status(pedido_id, novo_status):
     cur.execute("UPDATE pedidos SET status = %s WHERE id = %s;", (novo_status, pedido_id))
     conn.commit()
     cur.close()
-    conn.close()
+    conn.close() 
