@@ -137,7 +137,7 @@ def inserir_pedido(cpf, itens, total):
     if conn:
         try:
             cur = conn.cursor()
-            cur.execute("INSERT INTO pedidos (cpf, total) VALUES (%s, %s) RETURNING id;", (cpf, total))
+ cur.execute("INSERT INTO pedidos (cliente_nome, total) VALUES (%s, %s) RETURNING id;", (cpf, total))
             pedido_id = cur.fetchone()[0]
             for it in itens:
                 cur.execute("""
