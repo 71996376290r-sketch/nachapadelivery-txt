@@ -2,7 +2,7 @@
 import psycopg2
 from datetime import datetime
 
-# 🔧 Conexão com o banco (Render)
+# 🔧 Conexão com o banco PostgreSQL (Render)
 def get_conn():
     return psycopg2.connect(
         host="dpg-d43e2ommcj7s73b062jg-a.oregon-postgres.render.com",
@@ -11,10 +11,12 @@ def get_conn():
         password="dCu5hXO8okI8Qz0j9LK9i7AcZI3LYND0"
     )
 
-# 🧱 Inicializa tabelas
+# 🧱 Inicializa tabelas se não existirem
 def inicializar_banco():
     conn = get_conn()
     cur = conn.cursor()
+
+    # Tabela de clientes
     cur.execute("""
         CREATE TABLE IF NOT EXISTS clientes (
             id SERIAL PRIMARY KEY,
@@ -24,6 +26,17 @@ def inicializar_banco():
             endereco TEXT
         );
     """)
+
+    # Tabela de produtos
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS produtos (
+            id SERIAL PRIMARY KEY,
+            descricao TEXT NOT NULL,
+            preco NUMERIC(10,2) NOT NULL
+        );
+    """)
+
+    # Tabela de pedidos
     cur.execute("""
         CREATE TABLE IF NOT EXISTS pedidos (
             id SERIAL PRIMARY KEY,
@@ -33,6 +46,8 @@ def inicializar_banco():
             status VARCHAR(20) DEFAULT 'Pendente'
         );
     """)
+
+    # Tabela de itens do pedido
     cur.execute("""
         CREATE TABLE IF NOT EXISTS itens_pedido (
             id SERIAL PRIMARY KEY,
@@ -42,7 +57,24 @@ def inicializar_banco():
             preco_unit NUMERIC(10,2)
         );
     """)
+
     conn.commit()
+
+    # 🧩 Insere produtos padrão se a tabela estiver vazia
+    cur.execute("SELECT COUNT(*) FROM produtos;")
+    count = cur.fetchone()[0]
+    if count == 0:
+        produtos_iniciais = [
+            ("X-Burger", 15.00),
+            ("X-Salada", 17.00),
+            ("Refrigerante Lata", 6.00),
+            ("Batata Frita", 10.00),
+            ("Combo Completo", 35.00)
+        ]
+        cur.executemany("INSERT INTO produtos (descricao, preco) VALUES (%s, %s);", produtos_iniciais)
+        conn.commit()
+        print("🍔 Produtos iniciais inseridos no banco.")
+
     cur.close()
     conn.close()
     print("✅ Banco PostgreSQL inicializado com sucesso!")
@@ -151,12 +183,13 @@ def atualizar_status(pid, novo_status):
     conn.close()
     print(f"🔄 Status do pedido {pid} atualizado para '{novo_status}'")
 
-# 🍕 Lista de produtos fixos
+
+# 🍕 Listar produtos cadastrados
 def listar_produtos():
-    return [
-        {"id": 1, "descricao": "X-Burger", "preco": 15.0},
-        {"id": 2, "descricao": "X-Salada", "preco": 17.0},
-        {"id": 3, "descricao": "Refrigerante Lata", "preco": 6.0},
-        {"id": 4, "descricao": "Batata Frita", "preco": 10.0},
-        {"id": 5, "descricao": "Combo Completo", "preco": 35.0}
-    ]
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id, descricao, preco FROM produtos ORDER BY id;")
+    produtos = [{"id": r[0], "descricao": r[1], "preco": float(r[2])} for r in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return produtos
