@@ -150,3 +150,13 @@ def atualizar_status(pid, novo_status):
     cur.close()
     conn.close()
     print(f"🔄 Status do pedido {pid} atualizado para '{novo_status}'")
+
+# 🍕 Lista de produtos fixos
+def listar_produtos():
+    return [
+        {"id": 1, "descricao": "X-Burger", "preco": 15.0},
+        {"id": 2, "descricao": "X-Salada", "preco": 17.0},
+        {"id": 3, "descricao": "Refrigerante Lata", "preco": 6.0},
+        {"id": 4, "descricao": "Batata Frita", "preco": 10.0},
+        {"id": 5, "descricao": "Combo Completo", "preco": 35.0}
+    ]
