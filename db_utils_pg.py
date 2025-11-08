@@ -155,4 +155,4 @@ def listar_produtos():
     produtos = [{'id': r[0], 'nome': r[1], 'preco': float(r[2]), 'categoria': r[3], 'imagem': r[4]} for r in cur.fetchall()]
     cur.close()
     conn.close()
-    return produtos
+    return produtos 
