@@ -38,6 +38,9 @@
   <header class="page-header">🍔 Monte seu Pedido - Na Chapa Delivery</header>
 
   <main class="container">
+
+  
+
     {% for grupo in produtos|groupby('categoria') %}
       <section class="categoria" id="cat-{{ loop.index }}">
         <button class="cat-toggle" type="button" aria-expanded="true" data-target="#cat-body-{{ loop.index }}">
@@ -46,10 +49,10 @@
         </button>
         <div class="products-grid" id="cat-body-{{ loop.index }}">
           {% for p in grupo.list %}
-          <article class="card" data-id="{{ p.id }}" data-nome="{{ p.descricao }}" data-preco="{{ p.preco }}">
-            <img src="{{ url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.descricao }}">
+          <article class="card" data-id="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco }}">
+            <img src="{{ url_for('static', filename=p.imagem.replace('static/','')) if p.imagem else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ p.nome }}">
             <div class="meta">
-              <h3>{{ p.descricao }}</h3>
+              <h3>{{ p.nome }}</h3>
               <p class="price">R$ {{ '%.2f'|format(p.preco) }}</p>
             </div>
             <div class="controls">
@@ -110,45 +113,45 @@
     });
 
     async function finalizarPedido() {
-      const itens = [];
-      document.querySelectorAll('.card').forEach(c => {
-        const q = parseInt(c.querySelector('.qtd-num').textContent || '0', 10);
-        if (q > 0) {
-          itens.push({
-            id: c.dataset.id,
-            nome: c.dataset.nome,
-            preco: parseFloat(c.dataset.preco || 0),
-            quantidade: q,
-            subtotal: parseFloat(c.dataset.preco || 0) * q
-          });
-        }
+  const itens = [];
+  document.querySelectorAll('.card').forEach(c => {
+    const q = parseInt(c.querySelector('.qtd-num').textContent || '0', 10);
+    if (q > 0) {
+      itens.push({
+        id: c.dataset.id,
+        nome: c.dataset.nome,
+        preco: parseFloat(c.dataset.preco || 0),
+        qtd: q
       });
-
-      if (itens.length === 0) {
-        alert('Selecione pelo menos um item para continuar.');
-        return;
-      }
-
-      const total = document.getElementById('total').textContent.replace('R$', '').replace(',', '.').trim();
-
-      try {
-        const resp = await fetch('/salvar_pedido', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itens, total })
-        });
-
-        const data = await resp.json();
-        if (data.redirect) {
-          window.location.href = data.redirect;
-        } else {
-          alert('Erro ao prosseguir.');
-        }
-      } catch (err) {
-        alert('Erro de conexão: ' + err.message);
-      }
     }
+  });
 
+  if (itens.length === 0) {
+    alert('Selecione pelo menos um item para continuar.');
+    return;
+  }
+
+  const total = document.getElementById('total').textContent.replace('R$', '').replace(',', '.').trim();
+
+  try {
+    const resp = await fetch('/salvar_pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itens, total })
+    });
+
+    const data = await resp.json();
+    if (data.redirect) {
+      window.location.href = data.redirect; // Vai para a tela de CPF
+    } else {
+      alert('Erro ao prosseguir.');
+    }
+  } catch (err) {
+    alert('Erro de conexão: ' + err.message);
+  }
+}
+
+  
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.card').forEach(c => atualizarItemSubtotal(c));
       atualizarTotal();
